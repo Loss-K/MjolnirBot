@@ -21,14 +21,12 @@ class Mjolnirbot(commands.Bot):
         print(f'Ready boss, {self.nick} is connected to channel(s): {code4} ')
 
     #### If No Commands Exist Then tell them that ####
+    ### Logging does not work.
 
     async def event_command_error(self, ctx, error: Exception) -> None:
 
         print(error)
-        await ctx.send(f"Error: {error}")
-
         msginlog = str(error)
-
 
         msginlog.strip()
         msginlog = ' '.join(msginlog.split())
@@ -36,6 +34,8 @@ class Mjolnirbot(commands.Bot):
         with open("Logs/Messagelog.txt", "a") as f:
             f.write(f"{msginlog}\n")
             f.close()
+
+        await ctx.send(f"Error: {error}")
 
     async def event_message(self, ctx):
         if str.startswith(str(ctx.content), PREFIX):

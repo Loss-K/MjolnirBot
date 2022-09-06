@@ -1,4 +1,5 @@
 from twitchio.ext import commands
+import msg_log_db
 import random
 
 with open("../Config/Secret", "r") as f:
@@ -24,16 +25,7 @@ class Mjolnirbot(commands.Bot):
     ### Logging does not work.
 
     async def event_command_error(self, ctx, error: Exception) -> None:
-
-        print(error)
-        msginlog = str(error)
-
-        msginlog.strip()
-        msginlog = ' '.join(msginlog.split())
-
-        with open("Logs/Messagelog.txt", "a") as f:
-            f.write(f"{msginlog}\n")
-            f.close()
+       # msg_log_db.tablestuff.tbl_update(0,ctx.author.name,error,"True","True")
 
         await ctx.send(f"Error: {error}")
 

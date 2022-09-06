@@ -1,4 +1,5 @@
 from twitchio.ext import commands
+import random
 
 with open("../Config/Secret", "r") as f:
     lines = f.readlines()
@@ -22,24 +23,25 @@ class Mjolnirbot(commands.Bot):
     #### If No Commands Exist Then tell them that ####
 
     async def event_command_error(self, ctx, error: Exception) -> None:
+
         print(error)
-        await ctx.send(f"{error}")
+        await ctx.send(f"Error: {error}")
 
         msginlog = str(error)
 
 
         msginlog.strip()
         msginlog = ' '.join(msginlog.split())
-        print(msginlog)
 
+        with open("Logs/Messagelog.txt", "a") as f:
+            f.write(f"{msginlog}\n")
+            f.close()
 
-    # Temporary check for when testing.
     async def event_message(self, ctx):
         if str.startswith(str(ctx.content), PREFIX):
             print("I saw a message with this command in line")
 
             await self.handle_commands(ctx)
-
 
     ############################Command List ############################
 
@@ -52,6 +54,7 @@ class Mjolnirbot(commands.Bot):
         await ctx.send(f"thorsday")
         await ctx.send(f"pom")
         await ctx.send(f"assemble")
+        await ctx.send(f"down")
 
     @commands.command(name='unlurk')
     async def unlurk(self, ctx):
@@ -102,6 +105,12 @@ class Mjolnirbot(commands.Bot):
     async def assemble(self, ctx):
         await ctx.send('TITANS!!!! MAKE YE KNOWN! ASSEEEMMMMMBLLLEEEE')
 
+    @commands.command(name='down')
+    async def down(self, ctx):
+        rannum = random.randint(1, 100)
+        print(rannum)
+        await ctx.send(f"@{ctx.author.name} jumps high into the sky looking down at his target... They come to"
+                       f" bring the hammer down with {str(rannum)}% focus!")
 
 mj = Mjolnirbot()
 

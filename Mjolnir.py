@@ -9,7 +9,6 @@ with open("../Config/Secret", "r") as f:
 
 PREFIX = "!"
 
-
 class Mjolnirbot(commands.Bot):
 
     def __init__(self):
@@ -20,42 +19,29 @@ class Mjolnirbot(commands.Bot):
     async def event_ready(self):
         print(f'Ready boss, {self.nick} is connected to channel(s): {code4} ')
 
-###Prevent conversation with itself ######
+    #### If No Commands Exist Then tell them that ####
 
+    async def event_command_error(self, ctx, error: Exception) -> None:
+        print(error)
+        await ctx.send(f"{error}")
+
+        msginlog = str(error)
+
+
+        msginlog.strip()
+        msginlog = ' '.join(msginlog.split())
+        print(msginlog)
+
+
+    # Temporary check for when testing.
     async def event_message(self, ctx):
         if str.startswith(str(ctx.content), PREFIX):
             print("I saw a message with this command in line")
 
-        # if ctx.author.name.lower() == str.lower(code3):
-        #     print("I saw my own message.")
-        #     return
+            await self.handle_commands(ctx)
 
-        await self.handle_commands(ctx)
 
-    ############## Dang it dude you're so close.
-    # Read up on https://twitchio.readthedocs.io/en/latest/twitchio.commands.html#errors
-
-    #
-    # if commands.core.check(ctx):
-    # await self.handle_commands(ctx)
-    # else:
-    #     print("yikes")
-
-    # if CommandNotFound:
-    #     # pass
-    #     print('Test failed.')
-    #     # return
-
-    # if await self.event_command_error(ctx,error=CommandNotFound):
-    #     print("Oh No")
-
-############################Command List ############################
-
-    #### If No Commands Exist Then tell them that ####
-
-    ##Event Commands##
-
-    # Lurk like a Pro
+    ############################Command List ############################
 
     @commands.command(name='help')
     async def help(self, ctx):
@@ -66,8 +52,6 @@ class Mjolnirbot(commands.Bot):
         await ctx.send(f"thorsday")
         await ctx.send(f"pom")
         await ctx.send(f"assemble")
-
-
 
     @commands.command(name='unlurk')
     async def unlurk(self, ctx):
@@ -91,14 +75,14 @@ class Mjolnirbot(commands.Bot):
     async def sc(self, ctx):
         await ctx.send('Currently Playing... Who knows (coming soon.)')
 
-    #Thorsday
+    # Thorsday
 
     @commands.command(name='thorsday')
     async def thorsday(self, ctx):
         await ctx.send(f"Thorsday is Daz's favorite day! He will rock it, scream it, and crush it. Join the fray..."
                        f"(Rewrite this)")
 
-    #Pomodoros
+    # Pomodoros
 
     @commands.command(name='pom')
     async def pom(self, ctx):

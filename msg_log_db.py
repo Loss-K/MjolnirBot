@@ -1,3 +1,4 @@
+import random
 import sqlite3
 from datetime import datetime
 import os
@@ -5,10 +6,47 @@ import os
 
 class tablestuff:
     def __init__(self):
-        dbtest = "MsgLog.db"
+        self.dbtest = "Twitch/Logs/Msg_Logs/MsgLog.db"
 
-    def tbl_update(self, user, text, err_status="False", bot_msg_status="False"):
-        db = sqlite3.connect("MsgLog.db")
+    def tbl_check(self):
+        if not os.path.isfile(self.dbtest):
+            print(f"table doesn't exist yet")
+            db = sqlite3.connect(self.dbtest)
+            cur = db.cursor()
+            cur.execute("CREATE TABLE IF NOT EXISTS msg_detail "
+                        "('id' INTEGER PRIMARY KEY,"
+                        "'datetime' int,"
+                        "'User' text,"
+                        "'msg' text)")
+
+            cur.execute("CREATE TABLE IF NOT EXISTS cmd_detail "
+                        "('id' INTEGER PRIMARY KEY,"
+                        "'datetime' int,"
+                        "'User' text,"
+                        "'command' text,"
+                        "'command_detail' text)")
+
+            db.commit()
+            cur.close()
+            db.close()
+
+            print("Tables Created")
+
+    def tbl_cleanup(self):
+        db = sqlite3.connect(self.dbtest)
+        cur = db.cursor()
+        now2 = str(datetime.now().year * 10000000000 +
+                   datetime.now().month * 100000000 +
+                   datetime.now().day * 1000000)[:-6]
+
+        cur.execute("DELETE FROM msg_detail WHERE datetime LIKE '" + str(now2) + "%'")
+
+        db.commit()
+        cur.close()
+        db.close()
+
+    def tbl_update(self, user, msg_dtl):
+        db = sqlite3.connect(self.dbtest)
         cur = db.cursor()
         now2 = (datetime.now().year * 10000000000 +
                 datetime.now().month * 100000000 +
@@ -17,28 +55,44 @@ class tablestuff:
                 datetime.now().minute * 100 +
                 datetime.now().second)
 
-        cur.execute("INSERT INTO msg_detail(datetime,User,Message,Err_msg,Bot_Msg) "
-                    "VALUES ('" + str(now2) + "','" + str(user) + "','" + str(text) + "','" + str(err_status) +
-                    "'," + str(bot_msg_status) + ")")
+        un_value = now2, user, msg_dtl
+
+        cur.execute("INSERT INTO msg_detail VALUES (NULL, ?,?,?)", un_value)
+
         db.commit()
-        print("Did a thing")
 
-    def checktableexists(self):
-        if not os.path.isfile("MsgLog.db"):
-            db = sqlite3.connect("MsgLog.db")
-            cur = db.cursor()
-            cur.execute("CREATE TABLE IF NOT EXISTS msg_detail "
-                        "('id' INTEGER PRIMARY KEY,"
-                        "'datetime' int,"
-                        "'User' text,"
-                        "'Message' test,"
-                        "'Err_msg' boolean,"
-                        "'Bot_msg' boolean)")
+    def cmd_update(self, user, cmd_name, cmd_dtl):
+        db = sqlite3.connect(self.dbtest)
+        cur = db.cursor()
+        now2 = (datetime.now().year * 10000000000 +
+                datetime.now().month * 100000000 +
+                datetime.now().day * 1000000 +
+                datetime.now().hour * 10000 +
+                datetime.now().minute * 100 +
+                datetime.now().second)
 
-            db.commit()
-            cur.close()
-            db.close()
+        un_value = now2, user, cmd_name, cmd_dtl
+        cur.execute("INSERT INTO cmd_detail VALUES (NULL, ?,?,?,?)", un_value)
 
+        db.commit()
 
-tablestuff.checktableexists(0)
-tablestuff.tbl_update(0, "dmatru", "hello")
+        #print(f"inserted: {str(now2)}, {str(user)}, {str(cmd_name)}, {str(cmd_dtl)}")
+
+    def pick_random(self):
+        db = sqlite3.connect("Twitch/Logs/Msg_Logs/MsgLog.db")
+        cur = db.cursor()
+
+        cur.execute("SELECT * FROM msg_detail")
+        getnum = len(cur.fetchall())
+
+        if getnum < 2:
+            print("Theres only one person to pick in the log.")
+            target = "the stars above"
+            return target
+        else:
+
+            result = random.randrange(1, getnum)
+            target = cur.execute("SELECT User FROM msg_detail WHERE id = " + str(result)).fetchone()
+            target = str(target)
+            target = target[2:-3]
+            return "@" + target

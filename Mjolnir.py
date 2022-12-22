@@ -7,6 +7,8 @@ import random
 import json
 import requests
 
+import weather_db
+
 with open("./Config/Secret", "r") as f:
     lines = f.readlines()
     code1 = str.lower(lines[0]).strip()
@@ -22,10 +24,13 @@ class Mjolnirbot(commands.Bot):
 
     def __init__(self):
         super().__init__(token=code1, client_id=code2, nick=code3, prefix='!', initial_channels=[code4])
+        self.wstate = None
+        self.wcity = None
+        self.hugger = None
         self.weatherformat = None
         self.weather = None
         self.shoutout = None
-        self.weatherlimit = 10
+        self.weatherlimit = 20
 
     print("Connecting...")
 
@@ -33,6 +38,7 @@ class Mjolnirbot(commands.Bot):
         print(f'Ready boss, {self.nick} is connected to channel(s): {code4} ')
         print(f'Checking for tables')
         msg_log_db.tablestuff().tbl_check()
+        weather_db.WeatherStuff().tbl_check()
         print(f'Check completed.')
 
     ### If No Commands Exist Then tell them that ####
@@ -46,7 +52,12 @@ class Mjolnirbot(commands.Bot):
         testdb = msg_log_db
         testdb.tablestuff().cmd_update(user=cauth, cmd_dtl=errupdated, cmd_name=cmdname)
 
-        await ctx.send(f"Error: {error}")
+        if errupdated == "No command " + cmdname + " was found":
+            await ctx.send(f"Hey @{cauth}, This command doesn't exist! "
+                           f"Don't worry, I sent the idea to Daz directly. :)")
+        else:
+            await ctx.send(f"Hey @dazinmatru, we had an error when {cauth} tried to run the command! "
+                           f"If it exists, check the script: {error}")
 
     async def event_message(self, ctx):
         authorcheck = ctx.author
@@ -64,10 +75,14 @@ class Mjolnirbot(commands.Bot):
             if ctx.content[:3] == "!so":
                 self.shoutout = str(ctx.content)[4:]
 
+            if ctx.content[:4] == "!hug":
+                self.hugger = str(ctx.content)[5:]
+
             if ctx.content[:8] == "!weather":
                 self.weather = str(ctx.content)[9:].replace(",", "%2C%20")
                 self.weatherformat = str(ctx.content[9:])
-
+                self.wcity = self.weatherformat.split(',')[0]
+                self.wstate = self.weatherformat.split(',')[1]
 
             await self.handle_commands(ctx)
 
@@ -75,21 +90,13 @@ class Mjolnirbot(commands.Bot):
 
     @commands.command(name='help')
     async def help(self, ctx):
-        await ctx.send(f"Commands are:")
-        await ctx.send(f"lurk")
-        await ctx.send(f"unlurk")
-        await ctx.send(f"weather")
-        await ctx.send(f"SC - Not finished")
-        await ctx.send(f"thorsday")
-        await ctx.send(f"pom")
-        await ctx.send(f"assemble")
-        await ctx.send(f"down")
+        await ctx.send(f"Commands in stream can be found here: https://dazinmatru.com/#commands")
 
     @commands.command(name='unlurk')
     async def unlurk(self, ctx):
         await ctx.send(f"A flash of light cuts through the clouds in the sky and hits the ground."
                        f" As the light dissipates, @{ctx.author.name} steps forward, victorious from their conquest."
-                       f"What a classic Thor adventure!")
+                       f" What a classic Thor adventure!")
 
     @commands.command(name='lurk')
     async def lurk(self, ctx):
@@ -197,30 +204,62 @@ class Mjolnirbot(commands.Bot):
         await ctx.send(f"My streams will consist of either chill co-working sessions, "
                        f"gaming to what I can on my Laptop."
                        f"I'm still working out a new schedule, so keep an eye on the schedule tab "
-                       f"Anybody is welcome to chill and have another classic Thor Adventure!")
+                       f"Anybody is welcome to chill and have another classic Thor Adventure!"
+                       f"Wanna see what I'm up to for the stream? Check out my Figma plan: "
+                       f"https://www.figma.com/file/UDwdo4n3mhVQH1mLBcXZQi/Untitled?node-id=0%3A1&t=Y9UnyKRRfTK8ftLS-1")
+
+    @commands.command(name='raid')
+    async def raid(self, ctx):
+        await ctx.send(f"BOP BOP BOP We are here to BRING THE HAMMER DOWN! BOP BOP BOP")
+
+    @commands.command(name='hug')
+    async def hug(self, ctx):
+        await ctx.send(f"@{ctx.author.name} runs up to {self.hugger} and gives them the biggest, most crushing hug"
+                       f" ever!")
+
+    @commands.command(name='gn')
+    async def gn(self, ctx):
+        await ctx.send(f"@{ctx.author.name} picks up {self.hugger} with their mighty muscles, and carries them off to "
+                       f"bed. They tuck {self.hugger} in, and kisses their forehead, bidding them good night"
+                       f"and good night and sweet dreams!")
+
+    # Weather Stuff to be moved in its own Addon Functionality
 
     @commands.command(name='weather')
     async def weathercheck(self, ctx):
 
         if self.weatherlimit == 0:
-            print(f"Unfortunately the limit has been reached today. I'm using a freebie plan at this time. Try again"
-                  f" tomorrow!")
+            await ctx.send(f"Unfortunately the limit has been reached today. I'm using a freebie plan at this time. "
+                           f"Try again tomorrow!")
         else:
 
             if str(self.weatherformat).find(',') == -1:
                 await ctx.send("Incorrect format. Try in City,ST format. ie !weather Tampa,FL")
             else:
                 self.weatherlimit = self.weatherlimit - 1
-                print(self.weatherlimit)
+                print(f"{self.weatherlimit} weather calls remaining")
 
-                loc_key_search_url = 'http://dataservice.accuweather.com/locations/v1/cities/search?q='
-                city_name = self.weather
+                ## First Check the DB if it exists
 
-                comb_url = loc_key_search_url + city_name + "&apikey=" + wcode + "&details=false"
-                loc_key_response = requests.get(comb_url)
-                loc_key_json = loc_key_response.json()
+                self.key_check = weather_db.WeatherStuff().pull_key(wcity=self.wcity, wstate=self.wstate)
+                print(f"Key checK: + {self.key_check}")
 
-                city_key = loc_key_json[0].get('Key')
+                #If it doesn't return a key then call for it
+                if self.key_check is None:
+                    loc_key_search_url = 'http://dataservice.accuweather.com/locations/v1/cities/search?q='
+                    city_name = self.weather
+
+                    comb_url = loc_key_search_url + city_name + "&apikey=" + wcode + "&details=false"
+                    loc_key_response = requests.get(comb_url)
+                    loc_key_json = loc_key_response.json()
+
+                    city_key = loc_key_json[0].get('Key')
+
+                    weather_db.WeatherStuff().tbl_update(city=self.wcity,state=self.wstate, loc_key=city_key)
+
+                else:
+                    city_key = self.key_check
+                    print("Ok, Found the key and used it")
 
                 ## Now that we have a key, we can request actual details about that location.
 

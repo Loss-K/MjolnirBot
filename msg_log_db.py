@@ -62,19 +62,21 @@ class tablestuff:
         db.commit()
 
     def cmd_update(self, user, cmd_name, cmd_dtl):
-        db = sqlite3.connect(self.dbtest)
-        cur = db.cursor()
-        now2 = (datetime.now().year * 10000000000 +
-                datetime.now().month * 100000000 +
-                datetime.now().day * 1000000 +
-                datetime.now().hour * 10000 +
-                datetime.now().minute * 100 +
-                datetime.now().second)
+        # db = sqlite3.connect(self.dbtest)
+        # cur = db.cursor()
+        # now2 = (datetime.now().year * 10000000000 +
+        #         datetime.now().month * 100000000 +
+        #         datetime.now().day * 1000000 +
+        #         datetime.now().hour * 10000 +
+        #         datetime.now().minute * 100 +
+        #         datetime.now().second)
+        #
+        # un_value = now2, user, cmd_name, cmd_dtl
+        # cur.execute("INSERT INTO cmd_detail VALUES (NULL, ?,?,?,?)", un_value)
+        #
+        # db.commit()
 
-        un_value = now2, user, cmd_name, cmd_dtl
-        cur.execute("INSERT INTO cmd_detail VALUES (NULL, ?,?,?,?)", un_value)
-
-        db.commit()
+        pass
 
         #print(f"inserted: {str(now2)}, {str(user)}, {str(cmd_name)}, {str(cmd_dtl)}")
 
@@ -82,8 +84,21 @@ class tablestuff:
         db = sqlite3.connect("Twitch/Logs/Msg_Logs/MsgLog.db")
         cur = db.cursor()
 
-        cur.execute("SELECT * FROM msg_detail")
+        now2 = str(datetime.now().year * 10000000000 +
+                   datetime.now().month * 100000000 +
+                   (datetime.now().day - 1) * 1000000)[:-6]
+
+        print(now2)
+        #cur.execute("SELECT * FROM msg_detail WHERE datetime LIKE '" + str(now2) + "%'")
+        cur.execute("SELECT DISTINCT User FROM msg_detail WHERE datetime LIKE '" + str(now2) + "%'")
         getnum = len(cur.fetchall())
+
+        #tcur.execute("SELECT * FROM msg_detail ORDER BY datetime DESC LIMIT 1")
+
+        getlast = len(cur.fetchall())
+        print(getnum)
+        print(getlast)
+
 
         if getnum < 2:
             print("Theres only one person to pick in the log.")
@@ -92,6 +107,7 @@ class tablestuff:
         else:
 
             result = random.randrange(1, getnum)
+            print(result)
             target = cur.execute("SELECT User FROM msg_detail WHERE id = " + str(result)).fetchone()
             target = str(target)
             target = target[2:-3]

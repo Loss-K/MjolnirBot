@@ -6,7 +6,6 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6 import QtCore
-from PyQt6.QtCore import Qt, QPoint
 import playsound
 
 
@@ -23,15 +22,11 @@ class TWindow(QWidget):
 
         self.setStyleSheet("background-color: #495252;")
 
-        #for a future update to not include the title
-        self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
-
         self.create_buttons()
         self.timer_details()
 
         #Sets up some stuff
         self.hiding = False
-
 
 
     # Mouse Events
@@ -62,6 +57,7 @@ class TWindow(QWidget):
 
     #Build the pieces
     def create_buttons(self):
+
         # C/D Button
         self.playbutton = "AddOn_Functionality/Pomodoro/Play.png"
         self.pausebutton = "AddOn_Functionality/Pomodoro/Pause.ico"
@@ -147,7 +143,6 @@ class TWindow(QWidget):
             self.hiddenmessage.setText(self.hiddenmessages[random.randrange(0, len(self.hiddenmessages))])
             self.hiddenmessage.show()
 
-
     ### Timer Stuff
 
     def timer_decide(self, timer_type):
@@ -182,7 +177,6 @@ class TWindow(QWidget):
             self.timer.start(1000)
 
     def timer_details(self):
-
         #Time Label
         self.pom_label = QLabel(self)
         self.pom_label.setText("00:00")
@@ -191,7 +185,6 @@ class TWindow(QWidget):
         self.pom_label.setGeometry(150, 50, 200, 50)
 
     def timer_start(self, stime, t_type):
-
         if t_type == 'pom':
             if stime == 0 or stime is None or stime == "":
                 pom_min_label = 25
@@ -208,6 +201,11 @@ class TWindow(QWidget):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(lambda: self.time())
         self.timer.start(1000)
+
+
+
+
+
 
     # def threesecondflash(self):
     #     if self.pom_label == "Victory":

@@ -112,3 +112,11 @@ class tablestuff:
             target = str(target)
             target = target[2:-3]
             return "@" + target
+
+
+    def confirmstate(self):
+
+        list_of_States = []
+        States_Abbrev = []
+
+        print("Whee")

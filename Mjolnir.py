@@ -24,13 +24,12 @@ class Mjolnirbot(commands.Bot):
 
     def __init__(self):
         super().__init__(token=code1, client_id=code2, nick=code3, prefix='!', initial_channels=[code4])
+        self.command_target = None
         self.wstate = None
         self.wcity = None
-        self.hugger = None
         self.weatherformat = None
         self.weather = None
-        self.shoutout = None
-        self.weatherlimit = 20
+        self.weatherlimit = 25
 
     print("Connecting...")
 
@@ -59,6 +58,7 @@ class Mjolnirbot(commands.Bot):
             await ctx.send(f"Hey @dazinmatru, we had an error when {cauth} tried to run the command! "
                            f"If it exists, check the script: {error}")
 
+
     async def event_message(self, ctx):
         authorcheck = ctx.author
 
@@ -71,18 +71,13 @@ class Mjolnirbot(commands.Bot):
 
         if str.startswith(str(ctx.content), PREFIX):
             print("I saw a message with this command in line")
-
-            if ctx.content[:3] == "!so":
-                self.shoutout = str(ctx.content)[4:]
-
-            if ctx.content[:4] == "!hug":
-                self.hugger = str(ctx.content)[5:]
-
-            if ctx.content[:8] == "!weather":
-                self.weather = str(ctx.content)[9:].replace(",", "%2C%20")
-                self.weatherformat = str(ctx.content[9:])
-                self.wcity = self.weatherformat.split(',')[0]
-                self.wstate = self.weatherformat.split(',')[1]
+            self.command_target = ctx.content.split(" ", 1)
+            if len(self.command_target) > 1:
+                self.command_target = self.command_target[1]
+                print(f"{self.command_target} was the result")
+            else:
+                print("0 found, proceed with code")
+                self.command_target = None
 
             await self.handle_commands(ctx)
 
@@ -195,9 +190,12 @@ class Mjolnirbot(commands.Bot):
 
     @commands.command(name='so')
     async def shoutout(self, ctx):
-        await ctx.send(f"Hold up! You don't know the great @{self.shoutout.replace('@', '')}? "
-                       f"You should check out their channel"
-                       f" and give them a follow! www.twitch.tv/{self.shoutout.replace('@', '')}!")
+        if self.command_target is None:
+            await ctx.send(f"No target found.")
+        else:
+            await ctx.send(f"Hold up! You don't know the great {self.command_target}? "
+                           f"You should check out their channel"
+                           f" and give them a follow! www.twitch.tv/{self.command_target.replace('@', '')}!")
 
     @commands.command(name='stream')
     async def streaminfo(self, ctx):
@@ -214,35 +212,44 @@ class Mjolnirbot(commands.Bot):
 
     @commands.command(name='hug')
     async def hug(self, ctx):
-        await ctx.send(f"@{ctx.author.name} runs up to {self.hugger} and gives them the biggest, most crushing hug"
-                       f" ever!")
+        if self.command_target is None:
+            await ctx.send(f"No target found.")
+        else:
+            await ctx.send(f"@{ctx.author.name} runs up to {self.command_target} and gives them the biggest, "
+                           f"most crushing hug ever!")
 
     @commands.command(name='gn')
     async def gn(self, ctx):
-        await ctx.send(f"@{ctx.author.name} picks up {self.hugger} with their mighty muscles, and carries them off to "
-                       f"bed. They tuck {self.hugger} in, and kisses their forehead, bidding them good night"
-                       f"and good night and sweet dreams!")
+        if self.command_target is None:
+            await ctx.send(f"No target found.")
+        else:
+            await ctx.send(f"@{ctx.author.name} picks up {self.command_target} with their mighty muscles, "
+                           f"and carries them off to "
+                           f"bed. They tuck {self.command_target} in, and kisses their forehead, "
+                           f"bidding them good night and good night and sweet dreams!")
 
     # Weather Stuff to be moved in its own Addon Functionality
 
     @commands.command(name='weather')
     async def weathercheck(self, ctx):
 
+        self.weather = self.command_target.replace(",", "%2C%20")
+        self.wcity = self.command_target.split(',')[0]
+        self.wstate = self.command_target.split(',')[1]
+        print(self.wcity)
+        print(self.wstate)
+
         if self.weatherlimit == 0:
             await ctx.send(f"Unfortunately the limit has been reached today. I'm using a freebie plan at this time. "
                            f"Try again tomorrow!")
         else:
-
-            if str(self.weatherformat).find(',') == -1:
+            if str(self.command_target).find(',') == -1:
                 await ctx.send("Incorrect format. Try in City,ST format. ie !weather Tampa,FL")
-            else:
-                self.weatherlimit = self.weatherlimit - 1
-                print(f"{self.weatherlimit} weather calls remaining")
 
+            else:
                 ## First Check the DB if it exists
 
                 self.key_check = weather_db.WeatherStuff().pull_key(wcity=self.wcity, wstate=self.wstate)
-                print(f"Key checK: + {self.key_check}")
 
                 #If it doesn't return a key then call for it
                 if self.key_check is None:
@@ -255,11 +262,13 @@ class Mjolnirbot(commands.Bot):
 
                     city_key = loc_key_json[0].get('Key')
 
-                    weather_db.WeatherStuff().tbl_update(city=self.wcity,state=self.wstate, loc_key=city_key)
+                    weather_db.WeatherStuff().tbl_update(city=self.wcity, state=self.wstate, loc_key=city_key)
+
+                    self.weatherlimit = self.weatherlimit - 1
 
                 else:
                     city_key = self.key_check
-                    print("Ok, Found the key and used it")
+                    print("Ok, Found the key and used it instead of using a second call.")
 
                 ## Now that we have a key, we can request actual details about that location.
 
@@ -276,7 +285,11 @@ class Mjolnirbot(commands.Bot):
                 metric = weather_dtl["Temperature"]["Metric"]["Value"]
                 imperial = weather_dtl["Temperature"]["Imperial"]["Value"]
 
-                await ctx.send(f"The weather in {city_name.replace('%2C%20', ',')} is {weather_type}, at a temperature "
+                self.weatherlimit = self.weatherlimit - 1
+
+                print(f"{self.weatherlimit} weather calls remaining")
+
+                await ctx.send(f"The weather in {self.wcity}, {self.wstate} is {weather_type}, at a temperature "
                                f"of {imperial}F/{metric}C.")
 
     ### Admin Commands ###

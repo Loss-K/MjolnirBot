@@ -20,6 +20,9 @@ class TWindow(QWidget):
         self.setFixedWidth(500)
         self.setFixedHeight(200)
 
+        # for a future update to not include the title
+        self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
+
         self.setStyleSheet("background-color: #495252;")
 
         self.create_buttons()

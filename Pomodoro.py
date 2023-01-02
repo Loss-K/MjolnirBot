@@ -22,13 +22,15 @@ class TWindow(QWidget):
 
         # for a future update to not include the title
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
+        #self.setWindowOpacity(.5)
 
-        self.setStyleSheet("background-color: #495252;")
+        self.setStyleSheet("background-color: #495252; background:transparent;")
 
         self.create_buttons()
         self.timer_details()
 
         #Sets up some stuff
+        #This creates the minimize view bool. It starts unhidden, so false.
         self.hiding = False
 
 
@@ -142,6 +144,9 @@ class TWindow(QWidget):
             self.long_break.hide()
             self.connect_button.hide()
             self.breakbutton.hide()
+            self.breakbutton.setVisible(False)
+            self.breakbutton.setStyleSheet('background:transparent;')
+            self.breakbutton.setStyleSheet('border: transparent;')
             self.pom_dropdown.hide()
             self.hiddenmessage.setText(self.hiddenmessages[random.randrange(0, len(self.hiddenmessages))])
             self.hiddenmessage.show()

@@ -152,7 +152,7 @@ class TWindow(QWidget):
             self.hiddenmessage.show()
 
     ### Timer Stuff
-
+#push
     def timer_decide(self, timer_type):
 
         match timer_type:

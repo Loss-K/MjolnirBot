@@ -57,3 +57,23 @@ class WeatherStuff:
             return key
         else:
             return None
+
+
+    #
+    # def confirmstate(self):
+    #     #Saving - goal is to do a simple if statement that if the full name is searched, to use the abbrev
+    #     # for the states. Its simple, but for another day.
+    #
+    #     #list_of_States = [Alabama, Alaska, Arizona, Arkansas, American Samoa, California, Colorado, Connecticut,
+    #     # Delaware, District of Columbia, Florida, Georgia, Guam, Hawaii, Idaho, Illinois, Indiana, Iowa, Kansas,
+    #     # Kentucky, Louisiana, Maine, Maryland, Massachusetts, Michigan, Minnesota, Mississippi, Missouri, Montana,
+    #     # Nebraska, Nevada, New Hampshire, New Jersey, New Mexico, New York, North Carolina, North Dakota,
+    #     # Northern Mariana Islands, Ohio, Oklahoma, Oregon, Pennsylvania, Puerto Rico, Rhode Island, South Carolina,
+    #     # South Dakota, Tennessee, Texas, Trust Territories, Utah, Vermont, Virginia, Virgin Islands, Washington,
+    #     # West Virginia, Wisconsin, Wyoming]
+    #
+    #     #States_Abbrev = [AL, AK, AZ, AR, AS, CA, CO, CT, DE, DC, FL, GA, GU, HI, ID, IL, IN, IA, KS, KY, LA, ME, MD,
+    #     # MA, MI, MN, MS, MO, MT, NE, NV, NH, NJ, NM, NY, NC, ND, MP, OH, OK, OR, PA, PR, RI, SC, SD, TN, TX, TT, UT,
+    #     # VT, VA, VI, WA, WV, WI, WY]
+    #
+    #     print("Whee")

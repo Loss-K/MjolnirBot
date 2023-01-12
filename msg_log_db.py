@@ -62,19 +62,19 @@ class tablestuff:
         db.commit()
 
     def cmd_update(self, user, cmd_name, cmd_dtl):
-        # db = sqlite3.connect(self.dbtest)
-        # cur = db.cursor()
-        # now2 = (datetime.now().year * 10000000000 +
-        #         datetime.now().month * 100000000 +
-        #         datetime.now().day * 1000000 +
-        #         datetime.now().hour * 10000 +
-        #         datetime.now().minute * 100 +
-        #         datetime.now().second)
-        #
-        # un_value = now2, user, cmd_name, cmd_dtl
-        # cur.execute("INSERT INTO cmd_detail VALUES (NULL, ?,?,?,?)", un_value)
-        #
-        # db.commit()
+        db = sqlite3.connect(self.dbtest)
+        cur = db.cursor()
+        now2 = (datetime.now().year * 10000000000 +
+                datetime.now().month * 100000000 +
+                datetime.now().day * 1000000 +
+                datetime.now().hour * 10000 +
+                datetime.now().minute * 100 +
+                datetime.now().second)
+
+        un_value = now2, user, cmd_name, cmd_dtl
+        cur.execute("INSERT INTO cmd_detail VALUES (NULL, ?,?,?,?)", un_value)
+
+        db.commit()
 
         pass
 
@@ -86,37 +86,35 @@ class tablestuff:
 
         now2 = str(datetime.now().year * 10000000000 +
                    datetime.now().month * 100000000 +
-                   (datetime.now().day - 1) * 1000000)[:-6]
+                   (datetime.now().day) * 1000000)[:-6]
 
-        print(now2)
+        print(f"Time: {now2}")
+
         #cur.execute("SELECT * FROM msg_detail WHERE datetime LIKE '" + str(now2) + "%'")
         cur.execute("SELECT DISTINCT User FROM msg_detail WHERE datetime LIKE '" + str(now2) + "%'")
-        getnum = len(cur.fetchall())
+        chatters = (cur.fetchall())
+        getnum = len(chatters)
 
-        #tcur.execute("SELECT * FROM msg_detail ORDER BY datetime DESC LIMIT 1")
+        #cur.execute("SELECT * FROM msg_detail ORDER BY datetime DESC LIMIT 1")
 
         getlast = len(cur.fetchall())
-        print(getnum)
-        print(getlast)
+        for row in chatters:
+            print("User: ", row[0])
 
+        print(f"getnum {getnum}")
+        print(f"last {getlast}")
 
         if getnum < 2:
             print("Theres only one person to pick in the log.")
             target = "the stars above"
             return target
         else:
+            result = random.randrange(1, (getnum-1))
+            # print(f"random selected {result}")
+            # target = cur.execute("SELECT User FROM msg_detail WHERE id = " + str(result)).fetchone()
+            # target = str(target)
+            # target = target[2:-3]
 
-            result = random.randrange(1, getnum)
-            print(result)
-            target = cur.execute("SELECT User FROM msg_detail WHERE id = " + str(result)).fetchone()
-            target = str(target)
-            target = target[2:-3]
+            target = str(chatters[result]).replace("(", "").replace(")", "").replace("'", "").replace(",", "")
+            print(target)
             return "@" + target
-
-
-    def confirmstate(self):
-
-        list_of_States = []
-        States_Abbrev = []
-
-        print("Whee")

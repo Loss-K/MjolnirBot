@@ -2,7 +2,10 @@ import string
 import time
 from twitchio.ext import commands
 import msg_log_db
+import Ideas_DB
 import random
+import datetime
+import requests
 
 import json
 import requests
@@ -16,7 +19,7 @@ with open("./Config/Secret", "r") as f:
     code3 = str.lower(lines[2]).strip()
     code4 = str.lower(lines[3]).strip()
     wcode = str(lines[5]).strip()
-
+    Dmatru_token = str(lines[8]).strip()
 PREFIX = "!"
 
 
@@ -31,6 +34,19 @@ class Mjolnirbot(commands.Bot):
         self.weather = None
         self.weatherlimit = 25
 
+        self.twitchapi_headers = {'Client-ID': f"{code2}", 'Authorization': f"Bearer {Dmatru_token}"}
+
+        self.response = requests.get(f"https://api.twitch.tv/helix/users?login={code4[1:]}",
+                                     headers=self.twitchapi_headers)
+        if self.response.status_code == 200:
+            data = self.response.json()['data']
+            if data:
+                self.owner_twitch_id = data[0]
+                self.owner_name = self.owner_twitch_id['display_name']
+                self.owner_twitch_id = self.owner_twitch_id['id']
+
+                print(f"Completed: ID : {self.owner_twitch_id}, Name: {self.owner_name}")
+
     print("Connecting...")
 
     async def event_ready(self):
@@ -38,10 +54,11 @@ class Mjolnirbot(commands.Bot):
         print(f'Checking for tables')
         msg_log_db.tablestuff().tbl_check()
         weather_db.WeatherStuff().tbl_check()
+        Ideas_DB.tablestuff().tbl_check()
         print(f'Check completed.')
 
-    ### If No Commands Exist Then tell them that ####
-    # ## Logging does not work.
+    ## If No Commands Exist Then tell them that ####
+    ## Logging does not work.
 
     async def event_command_error(self, ctx, error: Exception) -> None:
         cauth = ctx.author.name
@@ -58,7 +75,6 @@ class Mjolnirbot(commands.Bot):
             await ctx.send(f"Hey @dazinmatru, we had an error when {cauth} tried to run the command! "
                            f"If it exists, check the script: {error}")
 
-
     async def event_message(self, ctx):
         authorcheck = ctx.author
 
@@ -71,6 +87,23 @@ class Mjolnirbot(commands.Bot):
 
         if str.startswith(str(ctx.content), PREFIX):
             print("I saw a message with this command in line")
+
+            ## We need the ID of the requester
+            self.response = requests.get(f"https://api.twitch.tv/helix/users?login={ctx.author.name}",
+                                         headers=self.twitchapi_headers)
+            if self.response.status_code == 200:
+                data = self.response.json()['data']
+                if data:
+                    self.requester = data[0]
+                    self.requester_id = self.requester['id']
+                    # self.requester_id = "135764218"
+                    self.requester_name = self.requester['display_name']
+                    print(f"Name: {self.requester_name}, ID: {self.requester_id}")
+                else:
+                    pass
+            else:
+                pass
+
             self.command_target = ctx.content.split(" ", 1)
             if len(self.command_target) > 1:
                 self.command_target = self.command_target[1]
@@ -85,7 +118,40 @@ class Mjolnirbot(commands.Bot):
 
     @commands.command(name='help')
     async def help(self, ctx):
-        await ctx.send(f"Commands in stream can be found here: https://dazinmatru.com/#commands")
+        await ctx.send(f"Commands in stream can be found here: https://dazinmatru.com/#twitchcommands")
+
+    @commands.command(name="followage")
+    async def followage(self, ctx):
+        # print(f"{broadcaster_name} has id {broadcaster_id}")
+        self.response = requests.get(
+            f"https://api.twitch.tv/helix/users/follows?from_id={self.requester_id}&to_id={self.owner_twitch_id}",
+            headers=self.twitchapi_headers)
+        self.result = self.response.json()
+        self.result = self.result['data']
+
+        # followed_day = self.result[0]['followed_at'][8:10]
+        # followed_month = self.result[0]['followed_at'][5:7]
+        # followed_year = self.result[0]['followed_at'][:4]
+        followed_total = datetime.datetime(int(self.result[0]['followed_at'][:4]), int(self.result[0]['followed_at'][5:7]), int(self.result[0]['followed_at'][8:10]), 12, 0, 0)
+        totaltime = datetime.datetime.now() - followed_total
+        totaltime = str(totaltime).split(',', 1)
+        await ctx.send(f"Dang @{self.result[0]['from_name']}!"
+                       f" You've been following me for a total of {totaltime[0]}! "
+                       f"Since {self.result[0]['followed_at'][5:7]}/{self.result[0]['followed_at'][:4]}!")
+
+    @commands.command(name='clip')
+    async def clip_things(self, ctx):
+        self.response = requests.post(f"https://api.twitch.tv/helix/clips?broadcaster_id={self.owner_twitch_id}",
+                                 headers= self.twitchapi_headers)
+        self.result = self.response.json()
+        self.result = self.result['data']
+
+        print(self.result[0]['id'])
+        clipURL = "https://clips.twitch.tv/" + self.result[0]['id']
+        await ctx.send(f"You've been caught @Dazinmatru! {ctx.author.name} has clipped you in action. "
+                       f"Everybody can watch it here: {clipURL}")
+
+        print(self.result)
 
     @commands.command(name='unlurk')
     async def unlurk(self, ctx):
@@ -221,12 +287,18 @@ class Mjolnirbot(commands.Bot):
     @commands.command(name='gn')
     async def gn(self, ctx):
         if self.command_target is None:
-            await ctx.send(f"No target found.")
+            await ctx.send(f"No target found. You need to specify who you want to tuck into bed!")
         else:
-            await ctx.send(f"@{ctx.author.name} picks up {self.command_target} with their mighty muscles, "
-                           f"and carries them off to "
-                           f"bed. They tuck {self.command_target} in, and kisses their forehead, "
-                           f"bidding them good night and good night and sweet dreams!")
+            await ctx.send(f"@{ctx.author.name} catches {self.command_target} yawning. Using their mighty muscles, "
+                           f"they pick up and {self.command_target} into their room, screaming "
+                           f"'GOOD NIGHT', walking away proudly at their victory.")
+
+    @commands.command(name='idea')
+    async def idea_addition(self, ctx):
+        idea_to_add = str(self.command_target)
+        Ideas_DB.tablestuff().tbl_update(user=ctx.author.name, msg_dtl=idea_to_add)
+        await ctx.send(f"What a grand idea! I've added it onto my back end list for vetting!")
+
 
     # Weather Stuff to be moved in its own Addon Functionality
 
@@ -234,8 +306,8 @@ class Mjolnirbot(commands.Bot):
     async def weathercheck(self, ctx):
 
         self.weather = self.command_target.replace(",", "%2C%20")
-        self.wcity = self.command_target.split(',')[0]
-        self.wstate = self.command_target.split(',')[1]
+        self.wcity = str(self.command_target.split(',')[0]).strip()
+        self.wstate = str(self.command_target.split(',')[1]).strip()
         print(self.wcity)
         print(self.wstate)
 
@@ -273,7 +345,7 @@ class Mjolnirbot(commands.Bot):
                 ## Now that we have a key, we can request actual details about that location.
 
                 city_search_url = 'http://dataservice.accuweather.com/currentconditions/v1/'
-                comb_url = city_search_url + city_key + "?apikey=" + wcode
+                comb_url = city_search_url + city_key + "?apikey=" + wcode + "&details=True"
 
                 city_weather_response = requests.get(comb_url)
 
@@ -284,13 +356,15 @@ class Mjolnirbot(commands.Bot):
                 weather_type = weather_dtl["WeatherText"]
                 metric = weather_dtl["Temperature"]["Metric"]["Value"]
                 imperial = weather_dtl["Temperature"]["Imperial"]["Value"]
+                realfeel_m = weather_dtl["RealFeelTemperature"]["Metric"]["Value"]
+                realfeel_i = weather_dtl["RealFeelTemperature"]["Imperial"]["Value"]
 
                 self.weatherlimit = self.weatherlimit - 1
 
                 print(f"{self.weatherlimit} weather calls remaining")
 
                 await ctx.send(f"The weather in {self.wcity}, {self.wstate} is {weather_type}, at a temperature "
-                               f"of {imperial}F/{metric}C.")
+                               f"of {imperial}F/{metric}C. It feels like it's really {realfeel_i}F/{realfeel_m}C")
 
     ### Admin Commands ###
 

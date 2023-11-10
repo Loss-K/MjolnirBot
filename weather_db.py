@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime
 import os
+import json
 
 
 class WeatherStuff:
@@ -28,21 +29,23 @@ class WeatherStuff:
 
     def tbl_update(self, city, state, loc_key):
 
-        db = sqlite3.connect(self.weathertest)
-        cur = db.cursor()
-        date_updated = str(datetime.now().year * 10000000000 +
-                   datetime.now().month * 100000000 +
-                   datetime.now().day * 1000000)[:-6]
+        if WeatherStuff.pull_key(self,wstate=state, wcity=city) != None:
 
-        un_value = city, state, loc_key, date_updated
+            db = sqlite3.connect(self.weathertest)
+            cur = db.cursor()
+            date_updated = str(datetime.now().year * 10000000000 +
+                       datetime.now().month * 100000000 +
+                       datetime.now().day * 1000000)[:-6]
 
-        cur.execute("INSERT INTO weather_keys VALUES (NULL, ?,?,?,?)", un_value)
+            un_value = city, state, loc_key, date_updated
 
-        db.commit()
-        cur.close()
-        db.close()
+            cur.execute("INSERT INTO weather_keys VALUES (NULL, ?,?,?,?)", un_value)
 
-    def pull_key(self, wcity,wstate):
+            db.commit()
+            cur.close()
+            db.close()
+
+    def pull_key(self, wcity, wstate):
 
         db = sqlite3.connect("Addon_Functionality/WeatherControl/WeatherKeys.db")
         cur = db.cursor()
@@ -58,22 +61,15 @@ class WeatherStuff:
         else:
             return None
 
+    def confirmstate(self, statereq, city, loc_key):
 
-    #
-    # def confirmstate(self):
-    #     #Saving - goal is to do a simple if statement that if the full name is searched, to use the abbrev
-    #     # for the states. Its simple, but for another day.
-    #
-    #     #list_of_States = [Alabama, Alaska, Arizona, Arkansas, American Samoa, California, Colorado, Connecticut,
-    #     # Delaware, District of Columbia, Florida, Georgia, Guam, Hawaii, Idaho, Illinois, Indiana, Iowa, Kansas,
-    #     # Kentucky, Louisiana, Maine, Maryland, Massachusetts, Michigan, Minnesota, Mississippi, Missouri, Montana,
-    #     # Nebraska, Nevada, New Hampshire, New Jersey, New Mexico, New York, North Carolina, North Dakota,
-    #     # Northern Mariana Islands, Ohio, Oklahoma, Oregon, Pennsylvania, Puerto Rico, Rhode Island, South Carolina,
-    #     # South Dakota, Tennessee, Texas, Trust Territories, Utah, Vermont, Virginia, Virgin Islands, Washington,
-    #     # West Virginia, Wisconsin, Wyoming]
-    #
-    #     #States_Abbrev = [AL, AK, AZ, AR, AS, CA, CO, CT, DE, DC, FL, GA, GU, HI, ID, IL, IN, IA, KS, KY, LA, ME, MD,
-    #     # MA, MI, MN, MS, MO, MT, NE, NV, NH, NJ, NM, NY, NC, ND, MP, OH, OK, OR, PA, PR, RI, SC, SD, TN, TX, TT, UT,
-    #     # VT, VA, VI, WA, WV, WI, WY]
-    #
-    #     print("Whee")
+        statereq = statereq
+
+        with open('/Users/kev/Desktop/Programming/00 Actual Projects/Python/Mjolnir_TwitchBot/Jsons/States.json') as f:
+            state_list = json.load(f)
+
+        for state in state_list:
+            if state["name"] == statereq:
+                statereq = state["abbreviation"]
+
+        WeatherStuff.tbl_update(self, city=city.lower(), state=statereq.lower(), loc_key=loc_key)

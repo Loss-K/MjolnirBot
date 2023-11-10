@@ -9,9 +9,32 @@ from PyQt6 import QtCore
 import playsound
 
 
+#TODO: Fix the timer reset from an in progress pom to break (Break does not reset.)
+        # Appears to be completed - does not seem to be an issue - Testing further.
+
+        #TODO:
+            # Bug Report - When a break/pomo ends, and another pomo is started, it will reset to 60 minutes.
+            # Error handling - if no value exists in the pom fields, should automatically add a default amount from
+            # Future settings screen.
+            #Happens on both pom and break
+
+            #Bug Report - Break button cannot see the timer type:
+                # There is no difference in set up between Pom/Timer
+                # timer_start is being implied when timer_type exists.
+                    # Check values and definition through code.
+                    #break complete text size
+
+                # Do we want to clear the Type Flag when the timer ends? Then check if flags exist, if not buttonwork
+
+            #self.timer.remainingtime
+            #self.timer.deleteLater() - Will delete the timer itself
+            #Most likely self.timer.singleshot(True) will be the way to go, but trying to figure out how to do this.
+
 class TWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.t_type = None
+        self.pom_min_label = 0
 
         # self.flashflag = True
 
@@ -23,8 +46,8 @@ class TWindow(QWidget):
         # for a future update to not include the title
         self.setWindowFlag(QtCore.Qt.WindowType.FramelessWindowHint)
         #self.setWindowOpacity(.5)
-
-        self.setStyleSheet("background-color: #495252; background:transparent;")
+        # background: transparent;
+        self.setStyleSheet("background-color: #495252; ")
 
         self.create_buttons()
         self.timer_details()
@@ -32,7 +55,6 @@ class TWindow(QWidget):
         #Sets up some stuff
         #This creates the minimize view bool. It starts unhidden, so false.
         self.hiding = False
-
 
     # Mouse Events
 
@@ -83,6 +105,8 @@ class TWindow(QWidget):
         self.pom_dropdown = QComboBox(self)
         self.pom_dropdown.addItem("Short Pomodoro")
         self.pom_dropdown.addItem("Long Pomodoro")
+        self.pom_dropdown.addItem("Short Break")
+        self.pom_dropdown.addItem("Long Break")
         self.pom_dropdown.setStyleSheet("QComboBox" 
                                         "{"
                                         "background-color: #495252;"
@@ -123,6 +147,13 @@ class TWindow(QWidget):
         quit_button.setStyleSheet("background-color: #191D1D;")
         quit_button.clicked.connect(lambda: sys.exit())
 
+        # Create the Pomo Counter
+        self.counter_pom = 0
+        self.pom_counter_label = QLabel(self)
+        self.pom_counter_label.setText(f"Pomo Count: {str(self.counter_pom)}")
+        self.pom_counter_label.setFont(QFont("Arial", 15))
+        self.pom_counter_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.pom_counter_label.setGeometry(380, 10, 100, 30)
 
     def minimizeview(self):
         if self.hiding:
@@ -132,6 +163,7 @@ class TWindow(QWidget):
             self.long_break.show()
             self.connect_button.show()
             self.breakbutton.show()
+            self.breakbutton.setVisible(True)
             self.pom_dropdown.show()
             self.hiding = False
             self.hiddenmessage.hide()
@@ -145,30 +177,46 @@ class TWindow(QWidget):
             self.connect_button.hide()
             self.breakbutton.hide()
             self.breakbutton.setVisible(False)
-            self.breakbutton.setStyleSheet('background:transparent;')
-            self.breakbutton.setStyleSheet('border: transparent;')
+            # self.breakbutton.setStyleSheet('background:transparent;')
+            # self.breakbutton.setStyleSheet('border: transparent;')
             self.pom_dropdown.hide()
             self.hiddenmessage.setText(self.hiddenmessages[random.randrange(0, len(self.hiddenmessages))])
             self.hiddenmessage.show()
 
     ### Timer Stuff
-#push
     def timer_decide(self, timer_type):
+        self.t_type = timer_type
 
         match timer_type:
             case 'pom':
                 self.currenttime_button = self.connect_button
                 self.opposite_button = self.breakbutton
+                self.timer_type = timer_type
+
+                match self.pom_dropdown.currentText():
+                    case 'Short Pomodoro':
+                        self.timer_amt = int(self.short_pom.text())
+                    case 'Long Pomodoro':
+                        self.timer_amt = int(self.long_pom.text())
+
             case 'break':
                 self.currenttime_button = self.breakbutton
                 self.opposite_button = self.connect_button
+                match self.pom_dropdown.currentText():
+                    case 'Short Break':
+                        self.timer_amt = int(self.short_break.text())
+                    case 'Long Break':
+                        self.timer_amt = int(self.long_break.text())
+
+                self.timer_amt = self.short_break.text()
 
         if self.currenttime_button.property("status") == "Off":
             self.currenttime_button.setProperty("status", "On")
             self.currenttime_button.setIcon(QIcon(self.playbutton))
             self.opposite_button.setDisabled(True)
             self.opposite_button.setIcon(QIcon())
-            self.timer_start(stime=self.short_pom.text(), t_type=timer_type)
+            print(self.short_pom.text())
+            self.timer_start(stime=int(self.timer_amt), t_type=timer_type)
 
         elif self.currenttime_button.property("status") == "On":
             self.currenttime_button.setProperty("status", "Paused")
@@ -190,29 +238,37 @@ class TWindow(QWidget):
         self.pom_label.setText("00:00")
         self.pom_label.setFont(QFont("Arial", 40))
         self.pom_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.pom_label.setGeometry(150, 50, 200, 50)
+        self.pom_label.setGeometry(150, 50, 300, 50)
 
     def timer_start(self, stime, t_type):
+        print(f"Timer Started at:{self.timer_amt}")
+        print(f"T_type: {t_type}")
         if t_type == 'pom':
+            print("This is a pom")
             if stime == 0 or stime is None or stime == "":
-                pom_min_label = 25
-            else:
-                pom_min_label = int(stime)
-        if t_type == 'break':
-            if stime == 0 or stime is None or stime == "":
-                pom_min_label = 10
-            else:
-                pom_min_label = int(stime)
+                print(f"Stime={stime}")
+                self.self.timer_amt = 25
 
-        self.pomtime = QtCore.QTime(00, pom_min_label, 00)
+            else:
+                self.pom_min_label = int(stime)
+
+        if t_type == 'break':
+            print("This is a break")
+            if stime == 0 or stime is None or stime == "":
+                self.self.timer_amt = 10
+
+            else:
+                self.pom_min_label = int(stime)
+
+        #self.pomtime = QtCore.QTime(00, self.pom_min_label, 00)
+        print("Do we get here?")
+        self.pomtime = QtCore.QTime(00, int(self.timer_amt), 00)
+        print(self.pom_min_label)
         # self.pomtime = QtCore.QTime(00, 00, 10)
         self.timer = QtCore.QTimer()
+        # self.timer.setSingleShot(True)
         self.timer.timeout.connect(lambda: self.time())
         self.timer.start(1000)
-
-
-
-
 
 
     # def threesecondflash(self):
@@ -226,6 +282,11 @@ class TWindow(QWidget):
     #         self.flashflag = not self.flashflag
 
     def time(self):
+        print("This is where it started.")
+        print(self.pom_label.text().lower())
+        print(self.pomtime.minute())
+        print(self.pomtime.second())
+
         self.pomtime = self.pomtime.addSecs(-1)
 
         if self.pomtime.minute() < 10:
@@ -244,14 +305,32 @@ class TWindow(QWidget):
         #     self.threesecondflash()
 
         ### We need to confirm the break or pom type and play the appropiate sound
-
-        if self.pomtime.minute() == 0 and self.pomtime.second() == 0:
+        print("----")
+        print(f'{self.pomtime.minute()},{self.pomtime.second()},{self.t_type}')
+        if self.pomtime.minute() == 0 and self.pomtime.second() == 0 and self.t_type == 'pom':
             self.timer.stop()
             self.pom_label.setText("VICTORY")
             self.play_victory()
+            self.breakbutton.setDisabled(False)
+            self.connect_button.setDisabled(False)
+            self.t_type = None
+
+        elif self.pomtime.minute() == 0 and self.pomtime.second() == 0 and self.t_type == 'break':
+            self.timer.stop()
+            self.pom_label.setText("BREAK COMPLETE")
+            self.play_breakend()
+            self.breakbutton.setDisabled(False)
+            self.connect_button.setDisabled(False)
+            self.t_type = None
+
+        else:
+            pass
+
 
     def play_victory(self):
-        playsound.playsound("AddOn_Functionality/Pomodoro/Victory.m4a", False)
+        playsound.playsound("Victory.m4a", False)
+        self.counter_pom += 1
+        self.pom_counter_label.setText(f"Pomo Count: {str(self.counter_pom)}")
 
     def play_breakend(self):
         pass

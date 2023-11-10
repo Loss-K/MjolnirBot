@@ -6,13 +6,14 @@ import Ideas_DB
 import random
 import datetime
 import requests
+import Background_Threads
+import os
 
 import json
-import requests
 
 import weather_db
 
-with open("./Config/Secret", "r") as f:
+with open("../Config/Secret", "r") as f:
     lines = f.readlines()
     code1 = str.lower(lines[0]).strip()
     code2 = str.lower(lines[1]).strip()
@@ -20,12 +21,14 @@ with open("./Config/Secret", "r") as f:
     code4 = str.lower(lines[3]).strip()
     wcode = str(lines[5]).strip()
     Dmatru_token = str(lines[8]).strip()
+
 PREFIX = "!"
 
 
 class Mjolnirbot(commands.Bot):
 
     def __init__(self):
+
         super().__init__(token=code1, client_id=code2, nick=code3, prefix='!', initial_channels=[code4])
         self.command_target = None
         self.wstate = None
@@ -46,6 +49,11 @@ class Mjolnirbot(commands.Bot):
                 self.owner_twitch_id = self.owner_twitch_id['id']
 
                 print(f"Completed: ID : {self.owner_twitch_id}, Name: {self.owner_name}")
+
+        for file in sorted(os.listdir("../cogs")):
+            if file.endswith("_Commands.py"):
+                self.load_module("cogs." + file[:-3])
+                print(f"{file} loaded.")
 
     print("Connecting...")
 
@@ -102,7 +110,7 @@ class Mjolnirbot(commands.Bot):
                 else:
                     pass
             else:
-                pass
+                print(self.response.status_code)
 
             self.command_target = ctx.content.split(" ", 1)
             if len(self.command_target) > 1:
@@ -119,39 +127,39 @@ class Mjolnirbot(commands.Bot):
     @commands.command(name='help')
     async def help(self, ctx):
         await ctx.send(f"Commands in stream can be found here: https://dazinmatru.com/#twitchcommands")
+    #
+    # @commands.command(name="followage")
+    # async def followage(self, ctx):
+    #     # print(f"{broadcaster_name} has id {broadcaster_id}")
+    #     self.response = requests.get(
+    #         f"https://api.twitch.tv/helix/users/follows?from_id={self.requester_id}&to_id={self.owner_twitch_id}",
+    #         headers=self.twitchapi_headers)
+    #     self.result = self.response.json()
+    #     self.result = self.result['data']
+    #
+    #     # followed_day = self.result[0]['followed_at'][8:10]
+    #     # followed_month = self.result[0]['followed_at'][5:7]
+    #     # followed_year = self.result[0]['followed_at'][:4]
+    #     followed_total = datetime.datetime(int(self.result[0]['followed_at'][:4]), int(self.result[0]['followed_at'][5:7]), int(self.result[0]['followed_at'][8:10]), 12, 0, 0)
+    #     totaltime = datetime.datetime.now() - followed_total
+    #     totaltime = str(totaltime).split(',', 1)
+    #     await ctx.send(f"Dang @{self.result[0]['from_name']}!"
+    #                    f" You've been following me for a total of {totaltime[0]}! "
+    #                    f"Since {self.result[0]['followed_at'][5:7]}/{self.result[0]['followed_at'][:4]}!")
 
-    @commands.command(name="followage")
-    async def followage(self, ctx):
-        # print(f"{broadcaster_name} has id {broadcaster_id}")
-        self.response = requests.get(
-            f"https://api.twitch.tv/helix/users/follows?from_id={self.requester_id}&to_id={self.owner_twitch_id}",
-            headers=self.twitchapi_headers)
-        self.result = self.response.json()
-        self.result = self.result['data']
-
-        # followed_day = self.result[0]['followed_at'][8:10]
-        # followed_month = self.result[0]['followed_at'][5:7]
-        # followed_year = self.result[0]['followed_at'][:4]
-        followed_total = datetime.datetime(int(self.result[0]['followed_at'][:4]), int(self.result[0]['followed_at'][5:7]), int(self.result[0]['followed_at'][8:10]), 12, 0, 0)
-        totaltime = datetime.datetime.now() - followed_total
-        totaltime = str(totaltime).split(',', 1)
-        await ctx.send(f"Dang @{self.result[0]['from_name']}!"
-                       f" You've been following me for a total of {totaltime[0]}! "
-                       f"Since {self.result[0]['followed_at'][5:7]}/{self.result[0]['followed_at'][:4]}!")
-
-    @commands.command(name='clip')
-    async def clip_things(self, ctx):
-        self.response = requests.post(f"https://api.twitch.tv/helix/clips?broadcaster_id={self.owner_twitch_id}",
-                                 headers= self.twitchapi_headers)
-        self.result = self.response.json()
-        self.result = self.result['data']
-
-        print(self.result[0]['id'])
-        clipURL = "https://clips.twitch.tv/" + self.result[0]['id']
-        await ctx.send(f"You've been caught @Dazinmatru! {ctx.author.name} has clipped you in action. "
-                       f"Everybody can watch it here: {clipURL}")
-
-        print(self.result)
+    # @commands.command(name='clip')
+    # async def clip_things(self, ctx):
+    #     self.response = requests.post(f"https://api.twitch.tv/helix/clips?broadcaster_id={self.owner_twitch_id}",
+    #                              headers=self.twitchapi_headers)
+    #     self.result = self.response.json()
+    #     self.result = self.result['data']
+    #
+    #     print(self.result[0]['id'])
+    #     clipURL = "https://clips.twitch.tv/" + self.result[0]['id']
+    #     await ctx.send(f"You've been caught @{self.owner_name}! {ctx.author.name} has clipped you in action. "
+    #                    f"Everybody can watch it here: {clipURL}")
+    #
+    #     print(self.result)
 
     @commands.command(name='unlurk')
     async def unlurk(self, ctx):
@@ -164,11 +172,18 @@ class Mjolnirbot(commands.Bot):
         await ctx.send(f"@{ctx.author.name} calls forth the bifrost, disappearing in a bright light to complete "
                        f"a glorious quest of their own.")
 
+    @commands.command(name='zelda')
+    async def lurk(self, ctx):
+        await ctx.send(f"First, we just had to go down deeper beneath the castle, didn't we...? We just HAD to go deeper... "
+                        f" Then of course Zelda just HAD to touch the glowy rock, sending the land of Hyrule once again into oblivion... This is all"                                                                                                                                                        
+                       f" her fault. And here I am saving everybody... again. This is why you don't get distracted by shiny"
+                       f" things!")
+
     # ########################### Information ############################
 
-    @commands.command(name='test')
-    async def test(self, ctx):
-        await ctx.send('Test completed.')
+    @commands.command(name='identify')
+    async def identify(self, ctx):
+        await ctx.send(f"Hi, I'm Daz's bot.")
 
     # CurrentSong
 
@@ -185,7 +200,6 @@ class Mjolnirbot(commands.Bot):
                        f"(Rewrite this)")
 
     # Pomodoros
-
     @commands.command(name='pom')
     async def pom(self, ctx):
         await ctx.send(f"During pomodoros ( https://en.wikipedia.org/wiki/Pomodoro_Technique ), "
@@ -198,6 +212,8 @@ class Mjolnirbot(commands.Bot):
     @commands.command(name='socials')
     async def social(self, ctx):
         await ctx.send('Check me out on https://www.dazinmatru.com! (Everything is new, so it is still in progress)')
+        await ctx.send('Join me on Discord: https://discord.gg/52srmcH59z!')
+        await ctx.send('Follow me on the "Metagram": https://www.instagram.com/dazinmatru')
 
     # Assemble
     @commands.command(name='tassemble')
@@ -213,6 +229,12 @@ class Mjolnirbot(commands.Bot):
                        f" bringing the hammer down with {str(rannum)}% focus!")
 
     # ### Epic people ####
+
+    @commands.command(name='joannemilktea')
+    async def joannemilktea(self, ctx):
+
+            await ctx.send(f"Be sure to check out the amazingly chill @joannemilktea on twitch at "
+                           f"https://www.twitch.tv/joannemilktea !")
 
     @commands.command(name='pink')
     async def pink(self, ctx):
@@ -247,12 +269,16 @@ class Mjolnirbot(commands.Bot):
                        f"THORSDAY (Thursdays) is my favorite day of the week! "
                        f"I call my self a technology counselor as my job title. My normal day consists of individuals "
                        f"coming to me with their technical issues, and I dive in to find the solution "
-                       f"and provide advice. I'm currently working to level up as a developer. ")
+                       f"and provide advice. I'm currently working to level up as a developer.")
+        await ctx.send('Check me out on https://www.dazinmatru.com! (Everything is new, so it is still in progress)')
+        await ctx.send('Join me on Discord: https://discord.gg/52srmcH59z!')
+        await ctx.send('Follow me on the "Metagram": https://www.instagram.com/dazinmatru')
 
     @commands.command(name='bye')
     async def bye(self, ctx):
         await ctx.send(f"Thank you for tuning in! You can check me out on dazinmatru.com. This is"
-                       f" my site that will contain my social medias, merch, and all the good stuff!")
+                       f" my site that will contain my social medias, merch, and all the good stuff. This is new and"
+                       f" in progress!")
 
     @commands.command(name='so')
     async def shoutout(self, ctx):
@@ -287,7 +313,7 @@ class Mjolnirbot(commands.Bot):
     @commands.command(name='gn')
     async def gn(self, ctx):
         if self.command_target is None:
-            await ctx.send(f"No target found. You need to specify who you want to tuck into bed!")
+            await ctx.send(f"No target found.")
         else:
             await ctx.send(f"@{ctx.author.name} catches {self.command_target} yawning. Using their mighty muscles, "
                            f"they pick up and {self.command_target} into their room, screaming "
@@ -389,8 +415,8 @@ class Mjolnirbot(commands.Bot):
         else:
             await ctx.send(f"You do not have the power to do this.")
 
-
 mj = Mjolnirbot()
 
 if __name__ == "__main__":
+    # Background_Threads.scheduler_job().plan_job()
     mj.run()

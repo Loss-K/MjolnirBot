@@ -129,7 +129,8 @@ class Mjolnirbot(commands.Bot):
                 if not result:
                     print(result)
                     print("Failed to find command, checking the ideas list, and if not - adding to the list.")
-                    idea_to_add = str(ctx.content[6:])
+                    print(f"Idea ---- {str(ctx.content)}")
+                    idea_to_add = str(ctx.content[1:])
                     Ideas_DB.tablestuff.checkfirst(self, user=self.requester_name, msg_dtl=idea_to_add)
                     await ctx.channel.send(
                         "Well, no command exists for that yet! No worries - I sent this command as an idea to Daz!")

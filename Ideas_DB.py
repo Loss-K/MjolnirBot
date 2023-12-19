@@ -46,7 +46,7 @@ class tablestuff:
         db.close()
 
     def checkfirst(self,user, msg_dtl):
-        if msg_dtl.startswith('!'):
+        if msg_dtl.lower().startswith('!idea'):
             msg_dtl = msg_dtl[6:]
         db = sqlite3.connect(self.ideasdb)
         print(self.ideasdb)
@@ -56,7 +56,9 @@ class tablestuff:
         result = (cur.fetchall())
 
         if len(result) == 0:
-            self.tbl_update(user, msg_dtl)
+            print(f"------- {user} with {msg_dtl}---------")
+            # self.tbl_update(user, msg_dtl)
+            tablestuff().tbl_update(user,msg_dtl)
             print("added")
         else:
             print("Idea already found. Not added")

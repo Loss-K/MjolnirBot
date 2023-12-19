@@ -64,18 +64,16 @@ class Mjolnirbot(commands.Bot):
         self.triggercheck = False
 
 ## erroring line for some reason - only when commands are used, though it provides a valid response
-        print("authorname: ", ctx.author.name)
         self.response = requests.get(f"https://api.twitch.tv/helix/users?login={ctx.author.name}",
                                      headers=self.twitchapi_headers)
         print("self check")
-        print(self.response)
+        print("authorname: ", ctx.author.name)
 
         if self.response.status_code == 200:
             data = self.response.json()['data']
             if data:
                 self.requester = data[0]
                 self.requester_id = self.requester['id']
-                # self.requester_id = "135764218"
                 self.requester_name = self.requester['display_name']
                 print(f"Name: {self.requester_name}, ID: {self.requester_id}, Message: {ctx.content}")
             else:
